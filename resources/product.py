@@ -4,6 +4,9 @@ from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from db import products
+from sqldb import db
+from models import ProductModel
+from sqlalchemy.exc import SQLAlchemyError
 
 blp = Blueprint("Products", __name__, description="Business central extensions as a product")
 
@@ -42,23 +45,27 @@ class ProductList(MethodView):
 
     def post(self):
         request_data = request.get_json()
-        if len(request_data["name"]) == 0 or len(request_data["description"]) == 0:
-            abort(400, message="Please add name or description in the body")
-        else:
-            product = {
-                "id": str(uuid.uuid4()),
-                "name": request_data["name"],
-                "description": request_data["description"],
-                "version_id": {},
-                "image": "",
-                "created_on": str(datetime.date.today()),
-                "modified_on": str(datetime.date.today())
-            }
-            products.append(product)
-            return product, 201
+        product = ProductModel(**request_data)
+        print(f"id:{product.id}")
+        print(f"name:{product.name}")
+        print(f"desc:{product.description}")
+        # print(f"version:{product.versions}")
+        print(f"image:{product.image}")
+        print(f"created_on:{product.image}")
+        # try:
+        db.session.add(product)
+        print("test")
+        db.session.commit()
+        print(f"id:{product.id}")
+        print(f"name:{product.name}")
+        print(f"desc:{product.description}")
+        # except SQLAlchemyError:
+        #     abort(500, message="An error occurred while inserting the product.")
+
+        return "ok",200
 
     def get(self):
         response_data = {
             "products": products
         }
-        return response_data, 200
+        return ProductModel.query.all(), 200
