@@ -56,6 +56,7 @@ class UserList(MethodView):
             last_name=user_data["last_name"],
             password_1=pbkdf2_sha256.hash(user_data["password_1"]),
             password_2=pbkdf2_sha256.hash(user_data["password_2"]),
+            is_admin=user_data["is_admin"]
         )
         user.created_on = datetime.datetime.now()
 
