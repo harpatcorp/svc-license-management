@@ -1,64 +1,51 @@
-import uuid
 import datetime
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from db import versions, transactions, users
+from sqldb import db
+from models import TransactionModel
+from schema import TransactionSchema
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
-blp = Blueprint("transactions", __name__, description="business central products sell transactions")
+blp = Blueprint("Transaction", __name__, description="business central products sell transactions")
 
 
 @blp.route("/transaction/<string:transaction_id>")
 class Transaction(MethodView):
+
+    @blp.response(200, TransactionSchema)
     def get(self, transaction_id):
-        for transaction in transactions:
-            if transaction["id"] == transaction_id:
-                return transaction, 200
-        else:
-            abort(404, message=f"Transaction with transaction id {transaction_id} is not found")
+        transaction = TransactionModel.query.get_or_404(transaction_id)
+        return transaction
 
 
-@blp.route("user/<string:user_id>/transaction")
+@blp.route("/user/<string:user_id>/transaction")
 class UserTransactionList(MethodView):
+    @blp.response(200, TransactionSchema(many=True))
     def get(self, user_id):
-        response_data = {
-            "transactions": []
-        }
-        for user in users:
-            if user["id"] == user_id:
-                for transaction in versions:
-                    if transaction["user_id"] == user_id:
-                        response_data["transactions"].append(transaction)
-
-                return response_data, 200
-            else:
-                abort(404, message=f"User with user id {user_id} is not found")
+        transactions = TransactionModel.query.filter_by(user_id=user_id).all()
+        return transactions
 
 
 @blp.route("/transaction")
 class TransactionList(MethodView):
+    @blp.response(200, TransactionSchema(many=True))
     def get(self):
-        response_data = {
-            "transactions": transactions
-        }
-        return response_data, 200
+        transactions = TransactionModel.query.all()
+        return transactions
 
-    def post(self):
-        request_data = request.get_json()
+    @blp.arguments(TransactionSchema)
+    @blp.response(201, TransactionSchema)
+    def post(self, transaction_data):
+        transaction = TransactionModel(**transaction_data)
+        transaction.ordered_on = datetime.datetime.now()
+        transaction.expired_on = datetime.datetime.now()
 
-        transaction = {
-            "id": str(uuid.uuid4()),
-            "user_id": request_data["user_id"],
-            "product_id": request_data["product_id"],
-            "version_id": request_data["version_id"],
-            "qty": request_data["qty"],
-            "currency": "USD",
-            "price": 25,
-            "total_amt": 25,
-            "ordered_on": str(datetime.date.today()),
-            "expired_on": str(datetime.date.today() + datetime.timedelta(days=5 * 365))
-        }
+        try:
+            db.session.add(transaction)
+            db.session.commit()
+        except IntegrityError:
+            abort(400, message="Transaction is already exist.")
+        except SQLAlchemyError:
+            abort(500, message="An error occurred while inserting the transaction")
 
-        transactions.append(transaction)
-
-        return transaction, 201
+        return transaction

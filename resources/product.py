@@ -1,40 +1,73 @@
 import datetime
-from email import message
+import os
+import base64
+import shutil
+import uuid
 
 import utils
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqldb import db
 from models import ProductModel
-from schema import ProductSchema
+from schema import ProductSchema, ProductInsertSchema
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from flask_jwt_extended import jwt_required
 
-blp = Blueprint("Products", __name__, description="Business central extensions as a product")
+blp = Blueprint("Product", __name__, description="Business central extensions as a product")
+image_folder = os.path.join("/home/harshil/PycharmProjects/api_server/data/images")
 
 
 @blp.route("/product/<string:product_id>")
 class Product(MethodView):
 
-    @blp.response(200, ProductSchema)
+    @blp.response(200, ProductInsertSchema)
     def get(self, product_id):
         product = ProductModel.query.get_or_404(product_id)
+        image = []
+        if product.image != None:
+            for file in os.listdir(str(product.image)):
+                if file.endswith(".jpeg"):
+                    file_path = f"{product.image}/{file}"
+                    with open(file_path, 'rb') as f:
+                        image.append(base64.b64encode(f.read()).decode('utf-8'))
+        product.image = image
         return product
 
-    @blp.arguments(ProductSchema)
+    @blp.arguments(ProductInsertSchema)
     @blp.response(200, ProductSchema)
     def patch(self, product_data, product_id):
         product = ProductModel.query.get_or_404(product_id)
         product.name = product_data["name"]
         product.description = product_data["description"]
         try:
-            product.image = product_data["image"]
+            if len(product_data["image"]) > 5:
+                abort(422, message="image should be less or equal 5")
+            else:
+                product_images = product_data["image"]
+                product.image = str(product_images)
+                if os.path.exists(str(product_images)):
+                    shutil.rmtree(product_images)
+                else:
+                    product_images = os.path.join(image_folder, str(uuid.uuid4()))
+                    product.image = str(product_images)
+                    os.makedirs(product_images)
+                i = 1
+                for image in product_data["image"]:
+                    if not utils.isBase64(str(image)):
+                        abort(400, message="Image is not converted in base64.")
+                    decoded_data = base64.b64decode((image))
+                    img_file = open(str(product_images) + "/" + str(i) + ".jpeg", 'wb')
+                    img_file.write(decoded_data)
+                    img_file.close()
+                    i = i + 1
         except KeyError:
-            print("Image key not found")
+            print("image key not found")
         product.modified_on = datetime.datetime.now()
         db.session.add(product)
         db.session.commit()
         return product
 
+    @blp.response(204)
     def delete(self, product_id):
         product = ProductModel.query.get_or_404(product_id)
         db.session.delete(product)
@@ -44,13 +77,30 @@ class Product(MethodView):
 
 @blp.route("/product")
 class ProductList(MethodView):
-
-    @blp.arguments(ProductSchema)
+    @jwt_required()
+    @blp.arguments(ProductInsertSchema)
     @blp.response(201, ProductSchema)
     def post(self, product_data):
         product = ProductModel(**product_data)
-        if not utils.isBase64(str(product.image)):
-            abort(400, message="Image is not converted in base64.")
+        try:
+            if len(product_data["image"]) > 5:
+                abort(422, message="image should be less or equal 5")
+            else:
+                product_images = os.path.join(image_folder, str(uuid.uuid4()))
+                product.image = str(product_images)
+                os.makedirs(product_images)
+                i = 1
+                for image in product_data["image"]:
+                    if not utils.isBase64(str(image)):
+                        abort(400, message="Image is not converted in base64.")
+                    decoded_data = base64.b64decode((image))
+                    img_file = open(str(product_images)+"/"+str(i)+".jpeg", 'wb')
+                    img_file.write(decoded_data)
+                    img_file.close()
+                    i = i + 1
+        except KeyError:
+            print("image key not found")
+
         product.created_on = datetime.datetime.now()
         product.modified_on = datetime.datetime.now()
         try:
@@ -63,6 +113,7 @@ class ProductList(MethodView):
 
         return product
 
+    @jwt_required()
     @blp.response(200, ProductSchema(many=True))
     def get(self):
         products = ProductModel.query.all()

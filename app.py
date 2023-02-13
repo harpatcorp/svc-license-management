@@ -1,11 +1,17 @@
+import secrets
+
 import models
 import os
 
 from sqldb import db
+from datetime import timedelta
 from flask import Flask
 from flask_smorest import Api
+from flask_jwt_extended import JWTManager
 from resources.product import blp as ProductBlueprint
 from resources.version import blp as VersionBlueprint
+from resources.transaction import blp as TransactionBlueprint
+from resources.user import blp as UserBlueprint
 
 
 def create_app(db_url=None):
@@ -22,10 +28,22 @@ def create_app(db_url=None):
     db.init_app(app)
     api = Api(app)
 
+    app.config["JWT_SECRET_KEY"] = str(secrets.SystemRandom().getrandbits(128))
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = timedelta(hours=1)
+    jwt = JWTManager(app)
+
+    @jwt.additional_claims_loader
+    def add_claims_to_jwt(identity):
+        if identity["is_admin"]:
+            return {"is_admin": True}
+        return {"is_admin": False}
+
     with app.app_context():
         db.create_all()
 
     api.register_blueprint(ProductBlueprint)
     api.register_blueprint(VersionBlueprint)
+    api.register_blueprint(TransactionBlueprint)
+    api.register_blueprint(UserBlueprint)
 
     return app
