@@ -10,6 +10,7 @@ from flask_smorest import Api
 from flask_jwt_extended import JWTManager
 from resources.product import blp as ProductBlueprint
 from resources.version import blp as VersionBlueprint
+from resources.version import blp2 as VersionAppBlueprint
 from resources.transaction import blp as TransactionBlueprint
 from resources.user import blp as UserBlueprint
 
@@ -43,6 +44,7 @@ def create_app(db_url=None):
 
     api.register_blueprint(ProductBlueprint)
     api.register_blueprint(VersionBlueprint)
+    api.register_blueprint(VersionAppBlueprint)
     api.register_blueprint(TransactionBlueprint)
     api.register_blueprint(UserBlueprint)
 

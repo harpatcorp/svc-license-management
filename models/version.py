@@ -13,4 +13,4 @@ class VersionModel(db.Model):
     path = db.Column(db.String, unique=False, nullable=True)
     created_on = db.Column(db.DateTime)
     modified_on = db.Column(db.DateTime)
-    u_tag = db.UniqueConstraint(product_id, tag)
+    u_tag = db.UniqueConstraint("product_id", "tag", deferrable=True)

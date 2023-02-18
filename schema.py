@@ -62,3 +62,7 @@ class UserLoginSchema(Schema):
 class AccessTokenSchema(Schema):
     access_token = fields.Str(dump_only=True)
     expired_in = fields.Int(dump_only=True)
+
+
+class ProductVersionSchema(ProductSchema):
+    versions = fields.List(fields.Nested(VersionSchema()), dump_only=True)

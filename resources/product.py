@@ -26,7 +26,7 @@ class Product(MethodView):
 
         image = []
 
-        if product.image != None:
+        if product.image is None:
             for file in os.listdir(str(product.image)):
                 if file.endswith(".jpeg"):
                     file_path = f"{product.image}/{file}"
@@ -70,7 +70,7 @@ class Product(MethodView):
                 for image in product_data["image"]:
                     if not utils.isBase64(str(image)):
                         abort(400, message="Image is not converted in base64.")
-                    decoded_data = base64.b64decode((image))
+                    decoded_data = base64.b64decode(image)
                     img_file = open(str(product_images) + "/" + str(i) + ".jpeg", 'wb')
                     img_file.write(decoded_data)
                     img_file.close()
@@ -128,7 +128,7 @@ class ProductList(MethodView):
                 for image in product_data["image"]:
                     if not utils.isBase64(str(image)):
                         abort(400, message="Image is not converted in base64.")
-                    decoded_data = base64.b64decode((image))
+                    decoded_data = base64.b64decode(image)
 
                     img_file = open(str(product_images)+"/"+str(i)+".jpeg", 'wb')
                     img_file.write(decoded_data)
