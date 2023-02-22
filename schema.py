@@ -23,7 +23,7 @@ class VersionSchema(Schema):
     id = fields.Str(dump_only=True)
     product_id = fields.Str(dump_only=True)
     tag = fields.Str(required=True)
-    currency = fields.Str(dump_only=True, default="USD")
+    currency = fields.Str(dump_only=True, default="INR")
     price = fields.Float(required=True)
     path = fields.Str(dump_only=True)
     created_on = fields.DateTime(dump_only=True)
@@ -39,6 +39,9 @@ class TransactionSchema(Schema):
     currency = fields.Str(dump_only=True)
     price = fields.Float(required=True)
     total_amt = fields.Float(required=True)
+    order_id = fields.Str(dump_only=True)
+    paid = fields.Boolean(dump_only=True)
+    active = fields.Boolean(dump_only=True)
     ordered_on = fields.DateTime(dump_only=True)
     expired_on = fields.DateTime(dump_only=True)
 
@@ -66,3 +69,21 @@ class AccessTokenSchema(Schema):
 
 class ProductVersionSchema(ProductSchema):
     versions = fields.List(fields.Nested(VersionSchema()), dump_only=True)
+
+
+class PaymentIntegrationInputSchema(Schema):
+    user_id = fields.Str(required=True, load_only=True)
+    product_id = fields.Str(required=True, load_only=True)
+    version_id = fields.Str(required=True, load_only=True)
+    customer_id = fields.Str(required=True, load_only=True)
+    customer_name = fields.Str(required=True, load_only=True)
+    customer_email = fields.Str(required=True, load_only=True)
+    customer_phone = fields.Str(required=True, load_only=True)
+    payment_methods = fields.Str(required=True, load_only=True)
+    order_amount = fields.Float(required=True, load_only=True)
+    order_currency = fields.Str(required=True, load_only=True, default="INR")
+    return_url = fields.Str(required=True, load_only=True)
+
+
+class GenericMessageSchema(Schema):
+    message = fields.Str(required=True, dump_only=True)

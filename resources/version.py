@@ -1,5 +1,7 @@
 import datetime
 import os
+import uuid
+
 from flask import request
 from flask import send_file
 from flask.views import MethodView
@@ -136,7 +138,7 @@ class VersionApp(MethodView):
                 if os.path.exists(version.path):
                     os.remove(version.path)
 
-            filename = secure_filename(app_file.filename)
+            filename = str(uuid.uuid4())+".app"
             filepath = str(os.path.join(APP_PATH, filename))
 
             app_file.save(filepath)

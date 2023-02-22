@@ -8,7 +8,7 @@ class VersionModel(db.Model):
     product_id = db.Column(db.Integer, db.ForeignKey("Product.id"), unique=False, nullable=False)
     product = db.relationship("ProductModel", back_populates="versions")
     tag = db.Column(db.String(50), unique=False, nullable=False)
-    currency = db.Column(db.String(3), unique=False, nullable=False, default="USD")
+    currency = db.Column(db.String(3), unique=False, nullable=False, default="INR")
     price = db.Column(db.Float(precision=2), unique=False, nullable=False)
     path = db.Column(db.String, unique=False, nullable=True)
     created_on = db.Column(db.DateTime)

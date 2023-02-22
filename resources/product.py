@@ -4,7 +4,7 @@ import base64
 import shutil
 import uuid
 
-import utils
+from toolkit import isBase64
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqldb import db
@@ -26,7 +26,7 @@ class Product(MethodView):
 
         image = []
 
-        if product.image is None:
+        if product.image is not None:
             for file in os.listdir(str(product.image)):
                 if file.endswith(".jpeg"):
                     file_path = f"{product.image}/{file}"
@@ -68,7 +68,7 @@ class Product(MethodView):
                 i = 1
 
                 for image in product_data["image"]:
-                    if not utils.isBase64(str(image)):
+                    if not isBase64(str(image)):
                         abort(400, message="Image is not converted in base64.")
                     decoded_data = base64.b64decode(image)
                     img_file = open(str(product_images) + "/" + str(i) + ".jpeg", 'wb')
@@ -126,7 +126,7 @@ class ProductList(MethodView):
                 i = 1
 
                 for image in product_data["image"]:
-                    if not utils.isBase64(str(image)):
+                    if not isBase64(str(image)):
                         abort(400, message="Image is not converted in base64.")
                     decoded_data = base64.b64decode(image)
 

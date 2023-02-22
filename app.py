@@ -13,6 +13,8 @@ from resources.version import blp as VersionBlueprint
 from resources.version import blp2 as VersionAppBlueprint
 from resources.transaction import blp as TransactionBlueprint
 from resources.user import blp as UserBlueprint
+from resources.payment import blp as PaymentBlueprint
+from resources.license import blp as LicenseBlueprint
 
 
 def create_app(db_url=None):
@@ -47,5 +49,7 @@ def create_app(db_url=None):
     api.register_blueprint(VersionAppBlueprint)
     api.register_blueprint(TransactionBlueprint)
     api.register_blueprint(UserBlueprint)
+    api.register_blueprint(PaymentBlueprint)
+    api.register_blueprint(LicenseBlueprint)
 
     return app

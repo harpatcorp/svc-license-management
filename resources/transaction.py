@@ -30,7 +30,7 @@ class UserTransactionList(MethodView):
     @jwt_required()
     @blp.response(200, TransactionSchema(many=True))
     def get(self, user_id):
-        transactions = TransactionModel.query.filter_by(user_id=user_id).all()
+        transactions = TransactionModel.query.filter_by(user_id=user_id, paid=True).all()
         return transactions
 
 

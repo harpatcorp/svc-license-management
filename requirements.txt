@@ -6,3 +6,5 @@ flask_sqlalchemy
 marshmallow
 flask-jwt-extended
 passlib
+requests
+cryptography
