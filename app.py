@@ -1,6 +1,5 @@
 import secrets
 
-import models
 import os
 
 from sqldb import db

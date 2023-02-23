@@ -1,5 +1,3 @@
-import uuid
-
 from sqldb import db
 
 

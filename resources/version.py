@@ -11,7 +11,6 @@ from models import ProductModel, VersionModel
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from schema import VersionSchema
 from flask_jwt_extended import get_jwt, jwt_required
-from werkzeug.utils import secure_filename
 
 blp = Blueprint("Version", __name__, description="business central product version")
 blp2 = Blueprint("Version App", __name__, description="business central product version app")

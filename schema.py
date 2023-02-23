@@ -67,10 +67,6 @@ class AccessTokenSchema(Schema):
     expired_in = fields.Int(dump_only=True)
 
 
-class ProductVersionSchema(ProductSchema):
-    versions = fields.List(fields.Nested(VersionSchema()), dump_only=True)
-
-
 class PaymentIntegrationInputSchema(Schema):
     user_id = fields.Str(required=True, load_only=True)
     product_id = fields.Str(required=True, load_only=True)

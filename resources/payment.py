@@ -8,7 +8,7 @@ from sqldb import db
 from models import TransactionModel, UserModel, VersionModel, ProductModel
 from schema import PaymentIntegrationInputSchema
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from flask_jwt_extended import jwt_required, get_jwt
+from flask_jwt_extended import jwt_required
 
 blp = Blueprint("Payment", __name__, description="payment for business central")
 
