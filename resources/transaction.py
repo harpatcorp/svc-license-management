@@ -1,64 +1,70 @@
-import uuid
 import datetime
-from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from db import versions, transactions, users
+from sqldb import db
+from models import TransactionModel, UserModel, VersionModel, ProductModel
+from schema import TransactionSchema
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
+from flask_jwt_extended import jwt_required, get_jwt
 
-blp = Blueprint("transactions", __name__, description="business central products sell transactions")
+blp = Blueprint("Transaction", __name__, description="business central products sell transactions")
 
 
 @blp.route("/transaction/<string:transaction_id>")
 class Transaction(MethodView):
+
+    @jwt_required()
+    @blp.response(200, TransactionSchema)
     def get(self, transaction_id):
-        for transaction in transactions:
-            if transaction["id"] == transaction_id:
-                return transaction, 200
-        else:
-            abort(404, message=f"Transaction with transaction id {transaction_id} is not found")
+        jwt = get_jwt()
+
+        if not jwt.get("is_admin"):
+            abort(401, message="Admin privilege required.")
+
+        transaction = TransactionModel.query.get_or_404(transaction_id)
+        return transaction
 
 
-@blp.route("user/<string:user_id>/transaction")
+@blp.route("/user/<string:user_id>/transaction")
 class UserTransactionList(MethodView):
+    @jwt_required()
+    @blp.response(200, TransactionSchema(many=True))
     def get(self, user_id):
-        response_data = {
-            "transactions": []
-        }
-        for user in users:
-            if user["id"] == user_id:
-                for transaction in versions:
-                    if transaction["user_id"] == user_id:
-                        response_data["transactions"].append(transaction)
-
-                return response_data, 200
-            else:
-                abort(404, message=f"User with user id {user_id} is not found")
+        transactions = TransactionModel.query.filter_by(user_id=user_id, paid=True).all()
+        return transactions
 
 
 @blp.route("/transaction")
 class TransactionList(MethodView):
+    @jwt_required()
+    @blp.response(200, TransactionSchema(many=True))
     def get(self):
-        response_data = {
-            "transactions": transactions
-        }
-        return response_data, 200
+        jwt = get_jwt()
 
-    def post(self):
-        request_data = request.get_json()
+        if not jwt.get("is_admin"):
+            abort(401, message="Admin privilege required.")
 
-        transaction = {
-            "id": str(uuid.uuid4()),
-            "user_id": request_data["user_id"],
-            "product_id": request_data["product_id"],
-            "version_id": request_data["version_id"],
-            "qty": request_data["qty"],
-            "currency": "USD",
-            "price": 25,
-            "total_amt": 25,
-            "ordered_on": str(datetime.date.today()),
-            "expired_on": str(datetime.date.today() + datetime.timedelta(days=5 * 365))
-        }
+        transactions = TransactionModel.query.all()
+        return transactions
 
-        transactions.append(transaction)
+    @jwt_required()
+    @blp.arguments(TransactionSchema)
+    @blp.response(201, TransactionSchema)
+    def post(self, transaction_data):
+        UserModel.query.get_or_404(transaction_data["user_id"])
+        ProductModel.query.get_or_404(transaction_data["product_id"])
+        VersionModel.query.get_or_404(transaction_data["version_id"])
 
-        return transaction, 201
+        transaction = TransactionModel(**transaction_data)
+        transaction.ordered_on = datetime.datetime.now()
+        transaction.expired_on = datetime.datetime.now() + (datetime.timedelta(days=365)*5)
+
+        try:
+            db.session.add(transaction)
+            db.session.commit()
+        except IntegrityError:
+            abort(400, message="Transaction is already exist.")
+        except SQLAlchemyError:
+            abort(500, message="An error occurred while inserting the transaction")
+
+        return transaction

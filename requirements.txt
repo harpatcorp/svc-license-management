@@ -1,3 +1,10 @@
 flask
 flask-smorest
 python-dotenv
+sqlalchemy
+flask_sqlalchemy
+marshmallow
+flask-jwt-extended
+passlib
+requests
+cryptography
