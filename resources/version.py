@@ -14,7 +14,7 @@ from flask_jwt_extended import get_jwt, jwt_required
 
 blp = Blueprint("Version", __name__, description="business central product version")
 blp2 = Blueprint("Version App", __name__, description="business central product version app")
-APP_PATH = os.path.join("/home/harshil/PycharmProjects/api_server/data/app")
+APP_PATH = os.getenv("APP_PATH")
 
 
 @blp.route("/version/<string:version_id>")

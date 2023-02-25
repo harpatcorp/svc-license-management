@@ -6,7 +6,7 @@ from cryptography.fernet import Fernet
 class EncDec:
 
     def __init__(self):
-        self._key = os.environ["enc_key"]
+        self._key = os.environ["ENC_KEY"]
 
     def encrypt_file(self, original_file, encrypted_file):
         f = Fernet(self._key)

@@ -14,7 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from flask_jwt_extended import jwt_required, get_jwt
 
 blp = Blueprint("Product", __name__, description="Business central extensions as a product")
-IMAGE_PATH = os.path.join("/home/harshil/PycharmProjects/api_server/data/images")
+IMAGE_PATH = os.getenv("IMG_PATH")
 
 
 @blp.route("/product/<string:product_id>")

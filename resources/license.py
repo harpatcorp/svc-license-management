@@ -1,4 +1,5 @@
 import io
+import os
 import uuid
 import json
 import datetime
@@ -18,8 +19,8 @@ blp = Blueprint("License", __name__, description="license for business central")
 @blp.route("/transaction/<string:transaction_id>/license/")
 class GenerateLicense(MethodView):
 
-    ORIGINAL_FILE_PATH = "/home/harshil/PycharmProjects/api_server/data/license/original_data/"
-    ENCRYPTED_FILE_PATH = "/home/harshil/PycharmProjects/api_server/data/license/encrypted_data/"
+    ORIGINAL_FILE_PATH = os.getenv("ORG_DATA_PATH")
+    ENCRYPTED_FILE_PATH = os.getenv("ENC_DATA_PATH")
 
     @jwt_required()
     @blp.response(200)

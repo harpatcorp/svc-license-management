@@ -1,4 +1,5 @@
 import datetime
+import os
 import uuid
 
 import requests
@@ -16,9 +17,9 @@ blp = Blueprint("Payment", __name__, description="payment for business central")
 @blp.route("/payment")
 class UserPayment(MethodView):
 
-    PAYMENT_URL = "https://sandbox.cashfree.com/pg/orders"
-    CLIENT_ID = "321006c79ba794b84a59522df8600123"
-    CLIENT_SECRET = "1ea7cb51ebbb80442562b5bedf891f0841f6d8d1"
+    PAYMENT_URL = os.getenv("PAYMENT_URL")
+    CLIENT_ID = os.getenv("CLIENT_ID")
+    CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
     @jwt_required()
     @blp.arguments(PaymentIntegrationInputSchema)
@@ -82,10 +83,6 @@ class UserPayment(MethodView):
 
 @blp.route("/payment/order/<string:order_id>")
 class UserPaymentOrder(MethodView):
-
-    ORD_URL = "https://sandbox.cashfree.com/pg/orders/"
-    CLIENT_ID = "321006c79ba794b84a59522df8600123"
-    CLIENT_SECRET = "1ea7cb51ebbb80442562b5bedf891f0841f6d8d1"
 
     @blp.response(200)
     def get(self, order_id):
