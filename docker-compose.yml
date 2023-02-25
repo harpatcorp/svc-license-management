@@ -8,8 +8,13 @@ services:
       POSTGRES_USER: root
       POSTGRES_PASSWORD: root
       POSTGRES_DB: license_db
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     ports:
-      - "5432:5432"
+      - "5430:5432"
 
   pgadmin:
     container_name: pgadmin4_server
@@ -23,6 +28,10 @@ services:
 
   restapi:
     container_name: license_api_server
+    restart: always
     build: .
+    depends_on:
+      db:
+        condition: service_healthy
     ports:
       - "8080:8080"
