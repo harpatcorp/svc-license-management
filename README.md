@@ -1,4 +1,4 @@
-# API Server
+# svc-license-management
 
 This is rest api server designed to use for business central extension validation with the help of licensing.
 
