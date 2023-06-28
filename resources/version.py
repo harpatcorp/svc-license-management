@@ -6,15 +6,16 @@ from flask import request
 from flask import send_file
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
+
 from sqldb import db
+from schema import VersionSchema
 from models import ProductModel, VersionModel
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from schema import VersionSchema
 from flask_jwt_extended import get_jwt, jwt_required
+from config import APP_PATH
 
 blp = Blueprint("Version", __name__, description="business central product version")
 blp2 = Blueprint("Version App", __name__, description="business central product version app")
-APP_PATH = os.getenv("APP_PATH")
 
 
 @blp.route("/version/<string:version_id>")
@@ -23,6 +24,10 @@ class Version(MethodView):
     @jwt_required()
     @blp.response(200, VersionSchema)
     def get(self, version_id):
+        '''
+            This end point is used to retrieve version of the product based on product id
+        '''
+        
         version = VersionModel.query.get_or_404(version_id)
         return version
 
@@ -30,6 +35,11 @@ class Version(MethodView):
     @blp.arguments(VersionSchema)
     @blp.response(200, VersionSchema)
     def patch(self, version_data, version_id):
+        '''
+            This end point is used to update version of the product based on the product id and version id
+            Note: Admin access is required
+        '''
+        
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
@@ -48,6 +58,11 @@ class Version(MethodView):
     @jwt_required()
     @blp.response(204)
     def delete(self, version_id):
+        '''
+            This end point is used to delete version of the product based on version id
+            Note: Admin access is required
+        '''
+
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
@@ -63,18 +78,27 @@ class Version(MethodView):
 
 @blp.route("/version")
 class VersionList(MethodView):
+    
     @jwt_required()
     @blp.response(200, VersionSchema(many=True))
     def get(self):
+        ''''
+            This end point is used to retrive all versions of availabe products
+        '''
         versions = VersionModel.query.all()
         return versions
 
 
 @blp.route("/product/<string:product_id>/version")
 class ProductVersionList(MethodView):
+    
     @jwt_required()
     @blp.response(200, VersionSchema(many=True))
     def get(self, product_id):
+        '''
+            This end point is used to retrive version of a product based on the product id
+        '''
+
         versions = VersionModel.query.filter_by(product_id=product_id).all()
         return versions
 
@@ -82,6 +106,11 @@ class ProductVersionList(MethodView):
     @blp.arguments(VersionSchema)
     @blp.response(201, VersionSchema)
     def post(self, version_data, product_id):
+        '''
+            This end point is used to upload version of a product based on the product id
+            Note: Admin access is required
+        '''
+        
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):

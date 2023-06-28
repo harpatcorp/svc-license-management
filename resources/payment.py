@@ -1,15 +1,16 @@
 import datetime
-import os
 import uuid
-
 import requests
+
+from flask_jwt_extended import jwt_required
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
+
 from sqldb import db
 from models import TransactionModel, UserModel, VersionModel, ProductModel
 from schema import PaymentIntegrationInputSchema
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from flask_jwt_extended import jwt_required
+from config import PAYMENT_URL,CLIENT_ID,CLIENT_SECRET
 
 blp = Blueprint("Payment", __name__, description="payment for business central")
 
@@ -17,13 +18,13 @@ blp = Blueprint("Payment", __name__, description="payment for business central")
 @blp.route("/payment")
 class UserPayment(MethodView):
 
-    PAYMENT_URL = os.getenv("PAYMENT_URL")
-    CLIENT_ID = os.getenv("CLIENT_ID")
-    CLIENT_SECRET = os.getenv("CLIENT_SECRET")
-
     @jwt_required()
     @blp.arguments(PaymentIntegrationInputSchema)
     def post(self, payment_data):
+        '''
+            This end point is used to create a payment order in cashfree
+        '''
+
         UserModel.query.get_or_404(payment_data["user_id"])
         ProductModel.query.get_or_404(payment_data["product_id"])
         VersionModel.query.get_or_404(payment_data["version_id"])
@@ -45,13 +46,13 @@ class UserPayment(MethodView):
         }
         headers = {
             "accept": "application/json",
-            "x-client-id": UserPayment.CLIENT_ID,
-            "x-client-secret": UserPayment.CLIENT_SECRET,
+            "x-client-id": CLIENT_ID,
+            "x-client-secret": CLIENT_SECRET,
             "x-api-version": "2022-09-01",
             "content-type": "application/json"
         }
 
-        response = requests.post(UserPayment.PAYMENT_URL, json=payload, headers=headers)
+        response = requests.post(PAYMENT_URL, json=payload, headers=headers)
 
         if response.status_code == 200:
             transaction_data = {
@@ -86,12 +87,16 @@ class UserPaymentOrder(MethodView):
 
     @blp.response(200)
     def get(self, order_id):
-        url = UserPaymentOrder.ORD_URL+order_id
+        '''
+            This end point is updating a transaction once payment is completed
+        '''
+
+        url = PAYMENT_URL+order_id
 
         headers = {
             "accept": "application/json",
-            "x-client-id": UserPaymentOrder.CLIENT_ID,
-            "x-client-secret": UserPaymentOrder.CLIENT_SECRET,
+            "x-client-id": CLIENT_ID,
+            "x-client-secret": CLIENT_SECRET,
             "x-api-version": "2021-05-21"
         }
 

@@ -2,31 +2,37 @@ import datetime
 
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt
+
 from sqldb import db
 from models import UserModel
+from passlib.hash import pbkdf2_sha256
 from schema import UserRegistrationSchema, UserLoginSchema, AccessTokenSchema
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt
-from passlib.hash import pbkdf2_sha256
 
 blp = Blueprint("User", __name__, description="user of license management system")
 
 
 @blp.route("/user/<string:user_id>")
 class User(MethodView):
+
     @jwt_required()
     @blp.response(200, UserRegistrationSchema)
     def get(self, user_id):
-        jwt = get_jwt()
-        if not jwt.get("is_admin"):
-            abort(401, message="Admin privilege required.")
-
+        '''
+            This end point is used to retrieve information of single user based on user id
+        '''
+        
         user = UserModel.query.get_or_404(user_id)
         return user
 
     @jwt_required()
     @blp.response(204)
     def delete(self, user_id):
+        '''
+            This end point is used to delete user based on user id
+        '''
+
         user = UserModel.query.get_or_404(user_id)
         db.session.delete(user)
         db.session.commit()
@@ -35,9 +41,15 @@ class User(MethodView):
 
 @blp.route("/user")
 class UserList(MethodView):
+    
     @jwt_required()
     @blp.response(200, UserRegistrationSchema(many=True))
     def get(self):
+        '''
+            This end point is used to retrive the list of available user
+            Note: Admin access is required
+        '''
+        
         jwt = get_jwt()
         if not jwt.get("is_admin"):
             abort(401, message="Admin privilege required.")
@@ -47,6 +59,10 @@ class UserList(MethodView):
     @blp.arguments(UserRegistrationSchema)
     @blp.response(201, UserRegistrationSchema)
     def post(self, user_data):
+        '''
+            This endpoint is used to register a new user
+        '''
+
         if user_data["password_1"] != user_data["password_2"]:
             abort(422, message="password_1 and password_2 does not match")
 
@@ -77,6 +93,9 @@ class UserLogin(MethodView):
     @blp.arguments(UserLoginSchema)
     @blp.response(200, AccessTokenSchema)
     def post(self, user_data):
+        '''
+            This endpoint is used to enerate access token
+        '''
         user = UserModel.query.filter(
             UserModel.email == user_data["email"]
         ).first()

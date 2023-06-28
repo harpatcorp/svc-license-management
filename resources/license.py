@@ -1,17 +1,19 @@
 import io
-import os
 import uuid
 import json
 import datetime
+
 from flask import request
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from sqldb import db
-from models import TransactionModel, UserModel, VersionModel, ProductModel
 from flask_jwt_extended import jwt_required
 from flask import send_file
+
+from models import TransactionModel, UserModel, VersionModel, ProductModel
+from sqldb import db
 from toolkit import EncDec
 from schema import GenericMessageSchema
+from config import ORG_DATA_PATH,ENC_DATA_PATH
 
 blp = Blueprint("License", __name__, description="license for business central")
 
@@ -19,12 +21,12 @@ blp = Blueprint("License", __name__, description="license for business central")
 @blp.route("/transaction/<string:transaction_id>/license/")
 class GenerateLicense(MethodView):
 
-    ORIGINAL_FILE_PATH = os.getenv("ORG_DATA_PATH")
-    ENCRYPTED_FILE_PATH = os.getenv("ENC_DATA_PATH")
-
     @jwt_required()
     @blp.response(200)
     def post(self, transaction_id):
+        '''
+            This end point is used to generate a license
+        '''
         transaction = TransactionModel.query.get_or_404(transaction_id)
 
         if transaction.paid is False:
@@ -48,13 +50,13 @@ class GenerateLicense(MethodView):
             response_body["ordered_on"] = str(transaction.ordered_on)
             response_body["expired_on"] = str(transaction.expired_on)
 
-            with open(GenerateLicense.ORIGINAL_FILE_PATH + file_name, "w") as data:
+            with open(ORG_DATA_PATH + file_name, "w") as data:
                 data.write(json.dumps(response_body))
 
-            EncDec().encrypt_file(GenerateLicense.ORIGINAL_FILE_PATH + file_name,
-                                  GenerateLicense.ENCRYPTED_FILE_PATH + file_name)
+            EncDec().encrypt_file(ORG_DATA_PATH + file_name,
+                                  ENC_DATA_PATH + file_name)
 
-        return send_file(path_or_file=GenerateLicense.ENCRYPTED_FILE_PATH + file_name, download_name="license.lic")
+        return send_file(path_or_file=ENC_DATA_PATH + file_name, download_name="license.lic")
 
 
 @blp.route("/license/activate")
@@ -69,6 +71,10 @@ class ActivateLicense(MethodView):
     @jwt_required()
     @blp.response(200, GenericMessageSchema)
     def post(self):
+        '''
+            This end point is used to activate the license
+        '''
+
         if 'lic_file' not in request.files:
             return abort(400, message="lic_file is not provided")
 
@@ -115,6 +121,10 @@ class DeactivateLicense(MethodView):
     @jwt_required()
     @blp.response(200, GenericMessageSchema)
     def post(self):
+        '''
+            This end point is used to deactivate the license
+        '''
+
         if 'lic_file' not in request.files:
             return abort(400, message="lic_file is not provided")
 

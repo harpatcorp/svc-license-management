@@ -29,6 +29,20 @@ services:
   restapi:
     container_name: license_api_server
     restart: always
+    environment:
+      ENC_KEY: qc1Un8Utu4wapfMzVcFpo9cXWVRQv6_oFbwQexhV3PM
+      APP_PATH: /usr/src/app/data/app
+      IMG_PATH: /usr/src/app/data/images
+      ORG_DATA_PATH: /usr/src/app/data/license/original_data
+      ENC_DATA_PATH: /usr/src/app/data/license/encrypted_data
+      CLIENT_ID: 321006c79ba794b84a59522df8600123
+      CLIENT_SECRET: 1ea7cb51ebbb80442562b5bedf891f0841f6d8d1
+      PAYMENT_URL: https://sandbox.cashfree.com/pg/orders
+      DB_IP: db
+      DB_PORT: 5430
+      DB_NAME: license_db
+      DB_USER: root
+      DB_PASS: root
     build: .
     depends_on:
       db:

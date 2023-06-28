@@ -1,11 +1,13 @@
 import datetime
+
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
-from sqldb import db
-from models import TransactionModel, UserModel, VersionModel, ProductModel
-from schema import TransactionSchema
-from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 from flask_jwt_extended import jwt_required, get_jwt
+
+from sqldb import db
+from schema import TransactionSchema
+from models import TransactionModel, UserModel, VersionModel, ProductModel
+from sqlalchemy.exc import SQLAlchemyError, IntegrityError
 
 blp = Blueprint("Transaction", __name__, description="business central products sell transactions")
 
@@ -16,6 +18,11 @@ class Transaction(MethodView):
     @jwt_required()
     @blp.response(200, TransactionSchema)
     def get(self, transaction_id):
+        '''
+            This end point is used to retrive transaction based on transaction id
+            Note: Admin access is required
+        '''
+
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
@@ -27,9 +34,14 @@ class Transaction(MethodView):
 
 @blp.route("/user/<string:user_id>/transaction")
 class UserTransactionList(MethodView):
+
     @jwt_required()
     @blp.response(200, TransactionSchema(many=True))
     def get(self, user_id):
+        '''
+            This end point is used to retrive transaction based on user id
+        '''
+
         transactions = TransactionModel.query.filter_by(user_id=user_id, paid=True).all()
         return transactions
 
@@ -39,6 +51,11 @@ class TransactionList(MethodView):
     @jwt_required()
     @blp.response(200, TransactionSchema(many=True))
     def get(self):
+        '''
+            This end point is used to retrive transactions
+            Note: Admin access is required
+        '''
+
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
@@ -51,6 +68,10 @@ class TransactionList(MethodView):
     @blp.arguments(TransactionSchema)
     @blp.response(201, TransactionSchema)
     def post(self, transaction_data):
+        '''
+            This end point is used to add a transaction
+        '''
+
         UserModel.query.get_or_404(transaction_data["user_id"])
         ProductModel.query.get_or_404(transaction_data["product_id"])
         VersionModel.query.get_or_404(transaction_data["version_id"])

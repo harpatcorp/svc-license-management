@@ -4,24 +4,31 @@ import base64
 import shutil
 import uuid
 
-from toolkit import isBase64
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
+from flask_jwt_extended import jwt_required, get_jwt
+
 from sqldb import db
+from toolkit import isBase64
 from models import ProductModel
 from schema import ProductSchema, ProductInsertSchema
 from sqlalchemy.exc import SQLAlchemyError, IntegrityError
-from flask_jwt_extended import jwt_required, get_jwt
+from config import IMG_PATH
+
 
 blp = Blueprint("Product", __name__, description="Business central extensions as a product")
-IMAGE_PATH = os.getenv("IMG_PATH")
 
 
 @blp.route("/product/<string:product_id>")
 class Product(MethodView):
+    
     @jwt_required()
     @blp.response(200, ProductInsertSchema)
     def get(self, product_id):
+        '''
+            This endpoint is used to retrive a product details based to product id
+        '''
+        
         product = ProductModel.query.get_or_404(product_id)
 
         image = []
@@ -41,6 +48,11 @@ class Product(MethodView):
     @blp.arguments(ProductInsertSchema)
     @blp.response(200, ProductSchema)
     def patch(self, product_data, product_id):
+        '''
+            This is end point is used to update product details
+            Note: Admin access is required
+        '''
+        
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
@@ -61,7 +73,7 @@ class Product(MethodView):
                 if os.path.exists(str(product_images)):
                     shutil.rmtree(product_images)
                 else:
-                    product_images = os.path.join(IMAGE_PATH, str(uuid.uuid4()))
+                    product_images = os.path.join(IMG_PATH, str(uuid.uuid4()))
                     product.image = str(product_images)
                     os.makedirs(product_images)
 
@@ -88,6 +100,11 @@ class Product(MethodView):
     @jwt_required()
     @blp.response(204)
     def delete(self, product_id):
+        '''
+            This end point is used to delete product and its available versions
+            Note: Admin access is required
+        '''
+        
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
@@ -103,10 +120,16 @@ class Product(MethodView):
 
 @blp.route("/product")
 class ProductList(MethodView):
+
     @jwt_required()
     @blp.arguments(ProductInsertSchema)
     @blp.response(201, ProductSchema)
     def post(self, product_data):
+        '''
+            This end point is used to upload product details
+            Note: Admin access is required
+        '''
+
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
@@ -118,7 +141,7 @@ class ProductList(MethodView):
             if len(product_data["image"]) > 5:
                 abort(422, message="image should be less or equal 5")
             else:
-                product_images = os.path.join(IMAGE_PATH, str(uuid.uuid4()))
+                product_images = os.path.join(IMG_PATH, str(uuid.uuid4()))
                 product.image = str(product_images)
 
                 os.makedirs(product_images)
@@ -154,5 +177,9 @@ class ProductList(MethodView):
     @jwt_required()
     @blp.response(200, ProductSchema(many=True))
     def get(self):
+        '''
+            This end point is used to retrive the list of available products
+        '''
+
         products = ProductModel.query.all()
         return products
