@@ -38,11 +38,13 @@ services:
       CLIENT_ID: 321006c79ba794b84a59522df8600123
       CLIENT_SECRET: 1ea7cb51ebbb80442562b5bedf891f0841f6d8d1
       PAYMENT_URL: https://sandbox.cashfree.com/pg/orders
-      DB_IP: db
-      DB_PORT: 5430
+      DB_HOST: db
+      DB_PORT: 5432
       DB_NAME: license_db
       DB_USER: root
       DB_PASS: root
+    links:
+      - db
     build: .
     depends_on:
       db:

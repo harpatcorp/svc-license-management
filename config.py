@@ -3,7 +3,7 @@ import os
 # Database Information
 DB_USER     = os.getenv("DB_USER","root")
 DB_PASS     = os.getenv("DB_PASS","root")
-DB_IP       = os.getenv("DB_IP","127.0.0.1")
+DB_IP       = os.getenv("DB_HOST","127.0.0.1")
 DB_PORT     = os.getenv("DB_PORT","5430")
 DB_NAME     = os.getenv("DB_NAME","license_db")
 
