@@ -5,6 +5,7 @@ import uuid
 from flask import request
 from flask import send_file
 from flask.views import MethodView
+from flask import current_app as app
 from flask_smorest import Blueprint, abort
 
 from sqldb import db
@@ -21,13 +22,12 @@ blp2 = Blueprint("Version App", __name__, description="business central product 
 @blp.route("/version/<string:version_id>")
 class Version(MethodView):
 
-    @jwt_required()
     @blp.response(200, VersionSchema)
     def get(self, version_id):
         '''
             This end point is used to retrieve version of the product based on product id
         '''
-        
+        app.logger.info("Version Id: {}".format(version_id))
         version = VersionModel.query.get_or_404(version_id)
         return version
 
@@ -39,10 +39,12 @@ class Version(MethodView):
             This end point is used to update version of the product based on the product id and version id
             Note: Admin access is required
         '''
-        
+        app.logger.info("Version Id: {}".format(version_id))
+        app.logger.info("Version Data: {}".format(version_data))
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
+            app.logger.info("Admin privilege required")
             abort(401, message="Admin privilege required.")
 
         version = VersionModel.query.get_or_404(version_id)
@@ -53,6 +55,7 @@ class Version(MethodView):
         db.session.add(version)
         db.session.commit()
 
+        app.logger.info("Version Id {} is updated".format(version_id))
         return version
 
     @jwt_required()
@@ -62,10 +65,10 @@ class Version(MethodView):
             This end point is used to delete version of the product based on version id
             Note: Admin access is required
         '''
-
         jwt = get_jwt()
 
         if not jwt.get("is_admin"):
+            app.logger.info("Admin privilege required")
             abort(401, message="Admin privilege required.")
 
         version = VersionModel.query.get_or_404(version_id)
@@ -73,6 +76,7 @@ class Version(MethodView):
         db.session.delete(version)
         db.session.commit()
 
+        app.logger.info("Version Id {} is deleted".format(version_id))
         return 204
 
 
@@ -84,7 +88,14 @@ class VersionList(MethodView):
     def get(self):
         ''''
             This end point is used to retrive all versions of availabe products
+            Note: Admin access is required
         '''
+        jwt = get_jwt()
+
+        if not jwt.get("is_admin"):
+            app.logger.info("Admin privilege required")
+            abort(401, message="Admin privilege required.")
+
         versions = VersionModel.query.all()
         return versions
 
@@ -98,7 +109,7 @@ class ProductVersionList(MethodView):
         '''
             This end point is used to retrive version of a product based on the product id
         '''
-
+        app.logger.info("Product Id: {}".format(product_id))
         versions = VersionModel.query.filter_by(product_id=product_id).all()
         return versions
 

@@ -1,6 +1,7 @@
 import datetime
 
 from flask.views import MethodView
+from flask import current_app as app
 from flask_smorest import Blueprint, abort
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt
 
@@ -22,7 +23,6 @@ class User(MethodView):
         '''
             This end point is used to retrieve information of single user based on user id
         '''
-        
         user = UserModel.query.get_or_404(user_id)
         return user
 
@@ -32,10 +32,18 @@ class User(MethodView):
         '''
             This end point is used to delete user based on user id
         '''
+        jwt = get_jwt()
+        if not jwt.get("is_admin"):
+            app.logger.info("Admin privilege is required to fetch all users")
+            abort(401, message="Admin privilege required.")
 
         user = UserModel.query.get_or_404(user_id)
+        
         db.session.delete(user)
         db.session.commit()
+
+        app.logger.info("User {} is deleted successfully".format(user_id))
+
         return 204
 
 
@@ -49,11 +57,13 @@ class UserList(MethodView):
             This end point is used to retrive the list of available user
             Note: Admin access is required
         '''
-        
         jwt = get_jwt()
         if not jwt.get("is_admin"):
+            app.logger.info("Admin privilege is required to fetch all users")
             abort(401, message="Admin privilege required.")
+        
         users = UserModel.query.all()
+        
         return users
 
     @blp.arguments(UserRegistrationSchema)
@@ -62,8 +72,10 @@ class UserList(MethodView):
         '''
             This endpoint is used to register a new user
         '''
+        app.logger.info("User Payload:{}".format(user_data))
 
         if user_data["password_1"] != user_data["password_2"]:
+            app.logger.info("Passwords are not identical")
             abort(422, message="password_1 and password_2 does not match")
 
         user = UserModel(
@@ -80,9 +92,13 @@ class UserList(MethodView):
             db.session.add(user)
             db.session.commit()
         except IntegrityError:
+            app.logger.info("User is already exist")
             abort(400, message="User is already exist.")
         except SQLAlchemyError:
+            app.logger.info("An error occurred while inserting the transaction")
             abort(500, message="An error occurred while inserting the transaction")
+
+        app.logger.info("User is registered")
 
         return user
 
@@ -96,6 +112,8 @@ class UserLogin(MethodView):
         '''
             This endpoint is used to enerate access token
         '''
+        app.logger.info("User Data: {}".format(user_data))
+        
         user = UserModel.query.filter(
             UserModel.email == user_data["email"]
         ).first()
@@ -107,6 +125,9 @@ class UserLogin(MethodView):
                                                    "is_admin": user.is_admin
                                                }
             )
+            app.logger.info("Access Token: {}".format(access_token))
             return {"access_token": access_token, "expired_in": 3600}
+
+        app.logger.info("Credentials are not valid")
 
         abort(401, message="Invalid credentials.")
